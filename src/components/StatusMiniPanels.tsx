@@ -1,6 +1,14 @@
 import type { GameState } from '../game/types';
 import { OrnatePanel } from './OrnatePanel';
 
+const SCREEN_LABELS: Record<string, string> = {
+  schedule: '일정 선택 중',
+  result: '결과 확인 중',
+  event: '이벤트 장면',
+  ending: '엔딩 진행',
+  prologue: '프롤로그 진행'
+};
+
 export function StatusMiniPanels({ state, screen }: { state: GameState; screen: string }) {
   const lastLog = state.logs.length > 0 ? state.logs[state.logs.length - 1] : '기록 없음';
   const rank = state.month > 8 ? '상급생' : '수련생';
@@ -13,7 +21,7 @@ export function StatusMiniPanels({ state, screen }: { state: GameState; screen: 
       <p>랭크: {rank}</p>
       <p>컨디션: {condition}</p>
       <p>최근 기록: {lastLog}</p>
-      <p>현재 상태: {screen}</p>
+      <p>현재 상태: {SCREEN_LABELS[screen] ?? '진행 중'}</p>
     </OrnatePanel>
   );
 }
