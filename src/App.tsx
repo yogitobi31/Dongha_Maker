@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GameShell } from './components/GameShell';
 import { OrnatePanel } from './components/OrnatePanel';
 import { RetroButton } from './components/RetroButton';
+import { PrologueScene } from './components/PrologueScene';
 import { TitleScene } from './components/TitleScene';
 import { ACTIVITIES } from './data/activities';
 import { ENDINGS } from './data/endings';
@@ -9,7 +10,7 @@ import { applyActivity, createInitialState } from './game/engine';
 import { loadGame, saveGame } from './game/storage';
 import type { GameState } from './game/types';
 
-type Scene = 'title' | 'game' | 'memoryAlbum' | 'endingAlbum' | 'settings';
+type Scene = 'title' | 'prologue' | 'game' | 'memoryAlbum' | 'endingAlbum' | 'settings';
 
 const SAVE_KEY = 'dongha-save';
 
@@ -71,7 +72,7 @@ export default function App() {
       saveGame(initial);
       setDialogue('새로운 1년을 시작합니다.');
       setScreen('schedule');
-      setScene('game');
+      setScene('prologue');
       setTitleMessage('');
       return;
     }
@@ -96,6 +97,7 @@ export default function App() {
   };
 
   if (scene === 'title') return <TitleScene onSelect={handleTitleSelect} message={titleMessage} />;
+  if (scene === 'prologue') return <PrologueScene onStart={() => setScene('game')} />;
   if (scene === 'memoryAlbum') return <RetroPlaceholder title="추억 앨범" text="아직 기록된 추억이 없습니다." onBack={() => setScene('title')} />;
   if (scene === 'endingAlbum') return <RetroPlaceholder title="엔딩 앨범" text="아직 해금된 엔딩이 없습니다." onBack={() => setScene('title')} />;
   if (scene === 'settings') return <RetroPlaceholder title="설정" text="사운드, 텍스트 속도, 저장 데이터 초기화 메뉴는 추후 제공됩니다." onBack={() => setScene('title')} />;
