@@ -1,0 +1,1 @@
+export function MemoryAlbum({items}:{items:any[]}){return <div className='scene-card'><h3>추억 앨범</h3>{items.map((m,i)=><div key={i}><b>{m.dateLabel}</b> {m.title} / {m.character} / {m.location}<p>{m.note}</p></div>)}</div>}

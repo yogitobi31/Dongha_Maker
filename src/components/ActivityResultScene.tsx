@@ -1,0 +1,1 @@
+export function ActivityResultScene({activity,resultText,delta,event}:{activity:any;resultText:string;delta:string[];event?:any}){return <div className='scene-card'><h3>{activity.name}</h3><p>{activity.location}</p><p>{resultText}</p><ul>{delta.map((d,i)=><li key={i}>{d}</li>)}</ul>{event&&<strong>특별한 일이 일어났다!</strong>}</div>}
