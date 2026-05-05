@@ -34,8 +34,8 @@ export default function App() {
   const [scene, setScene] = useState<Scene>('title');
   const [state, setState] = useState<GameState>(createInitialState());
   const [screen, setScreen] = useState<'schedule' | 'result' | 'event' | 'ending'>('schedule');
-  const [selectedAction, setSelectedAction] = useState<string>(ACTIVITIES[0]?.id ?? '');
-  const [dialogue, setDialogue] = useState('동하의 하루를 계획해 주세요.');
+  const [selectedAction, setSelectedAction] = useState<string>('schedule');
+  const [dialogue, setDialogue] = useState('새로운 1년이 시작됩니다. 오늘의 선택이 동하의 내일을 조금씩 바꿔 갈 거예요.');
   const [titleMessage, setTitleMessage] = useState('');
 
   const onPick = (id: string) => {
@@ -70,7 +70,7 @@ export default function App() {
       const initial = createInitialState();
       setState(initial);
       saveGame(initial);
-      setDialogue('새로운 1년을 시작합니다.');
+      setDialogue('새로운 1년이 시작됩니다. 오늘의 선택이 동하의 내일을 조금씩 바꿔 갈 거예요.');
       setScreen('schedule');
       setScene('prologue');
       setTitleMessage('');
@@ -102,5 +102,5 @@ export default function App() {
   if (scene === 'endingAlbum') return <RetroPlaceholder title="엔딩 앨범" text="아직 해금된 엔딩이 없습니다." onBack={() => setScene('title')} />;
   if (scene === 'settings') return <RetroPlaceholder title="설정" text="사운드, 텍스트 속도, 저장 데이터 초기화 메뉴는 추후 제공됩니다." onBack={() => setScene('title')} />;
 
-  return <GameShell state={state} screen={screen} selectedAction={selectedAction} dialogue={dialogue} onPick={onPick} onStart={() => setState(loadGame())} onNew={() => setState(createInitialState())} onNext={() => setScreen('schedule')} />;
+  return <GameShell state={state} screen={screen} selectedAction={selectedAction} dialogue={dialogue} onPick={onPick} onStart={() => { const loaded = loadGame(); setState(loaded); setDialogue('저장된 기록에서 다음 일정을 준비합니다.'); }} onNew={() => { setState(createInitialState()); setSelectedAction('schedule'); setDialogue('새로운 1년이 시작됩니다. 오늘의 선택이 동하의 내일을 조금씩 바꿔 갈 거예요.'); }} onNext={() => setScreen('schedule')} />;
 }
