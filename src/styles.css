@@ -31,8 +31,16 @@ body { margin: 0; background: radial-gradient(circle at top, #1b2030, #06060a 60
 .character-stage__bg { position:absolute; inset:0; background: linear-gradient(180deg,#1d1a28,#2c1e1e 58%,#37251a); }
 .character-stage__window { position:absolute; right:8%; top:11%; width:160px; height:180px; border:4px solid #6f5338; background: linear-gradient(180deg,#1c2f4f,#081226); box-shadow: inset 0 0 35px rgba(170,200,255,.2); }
 .character-stage__desk { position:absolute; left:0; right:0; bottom:0; height:120px; background: linear-gradient(180deg,#4e3023,#2f1a13); border-top:3px solid #7a5337; }
-.character-stage__avatar { position:absolute; left:50%; bottom:86px; transform:translateX(-50%); text-align:center; }
-.character-stage__silhouette { width:170px; height:260px; background: linear-gradient(180deg,#2f313f,#151419); clip-path: polygon(45% 0,55% 0,70% 10%,74% 24%,70% 35%,76% 57%,72% 100%,28% 100%,24% 57%,30% 35%,26% 24%,30% 10%); border: 2px solid #796048; }
+.character-stage__avatar { position:absolute; left:50%; bottom:94px; transform:translateX(-50%); width:210px; height:280px; }
+.character-stage__halo { position:absolute; left:30px; top:5px; width:150px; height:150px; border-radius:50%; background: radial-gradient(circle, rgba(255,223,170,.45), rgba(255,223,170,0)); }
+.character-stage__hair { position:absolute; left:52px; top:26px; width:106px; height:120px; background: linear-gradient(180deg,#44384e,#282231); border-radius:56px 56px 44px 44px; box-shadow: 0 0 0 2px #7c6552; }
+.character-stage__face { position:absolute; left:67px; top:60px; width:76px; height:92px; background: linear-gradient(180deg,#ffe7c9,#f2cfa5); border-radius:42px; box-shadow: inset 0 -6px 0 rgba(175,106,87,.25); }
+.character-stage__uniform { position:absolute; left:44px; bottom:0; width:122px; height:152px; background: linear-gradient(180deg,#334a74,#1f2a45); clip-path: polygon(12% 0,88% 0,100% 24%,92% 100%,8% 100%,0 24%); border: 2px solid #8a6d4c; }
+.character-stage__nameplate { position:absolute; left:18px; top:14px; padding:6px 10px; border:2px solid #8a6d4c; background: rgba(37,24,24,.82); font-weight:700; letter-spacing:1px; }
+.character-stage__status { position:absolute; left:16px; bottom:16px; padding:8px 10px; border:2px solid #6c4f32; background: rgba(20,14,19,.8); font-size:13px; }
+.character-stage__status p { margin: 0 0 4px; }
+.character-stage__status p:last-child { margin-bottom: 0; }
+
 .dialogue-box { height: 100%; border: 3px solid #4d2d21; background: linear-gradient(180deg,#2f1717,#1f1111); display:grid; grid-template-columns: 90px 1fr 44px; align-items:center; padding:10px; box-shadow: inset 0 0 0 2px #765f40; }
 .dialogue-box__portrait { width:70px; height:70px; border:2px solid #8b6b45; display:flex; align-items:center; justify-content:center; font-size:30px; }
 .dialogue-box__name { margin:0 0 4px; color: #ffdd9e; }
