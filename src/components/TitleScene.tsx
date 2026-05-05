@@ -11,7 +11,11 @@ export function TitleScene({ onSelect, message }: { onSelect: (action: TitleActi
         <div className="title-scene__window" />
         <div className="title-scene__desk" />
         <div className="title-scene__album" />
-        <div className="title-scene__standing" />
+        <div className="title-scene__standing">
+          <div className="title-standing__hair" />
+          <div className="title-standing__face" />
+          <div className="title-standing__uniform" />
+        </div>
 
         <header className="title-header">
           <p className="title-header__eyebrow">CLASSIC TRAINING SIMULATION</p>
