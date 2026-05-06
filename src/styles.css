@@ -74,3 +74,25 @@ h1 { margin: 10px 0 6px; font-size: clamp(36px, 8vw, 56px); }
 .relationship-notes em{font-style:normal;color:#4f4438}
 .relationship-notes span{color:#7a6a5b;font-size:13px}
 @media (min-width: 768px){.relationship-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}}
+.status-hero{position:relative;overflow:hidden}
+.season-bg-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.18;pointer-events:none}
+.season-spring{background:linear-gradient(145deg,#fffbf3,#eef5e8)}
+.season-summer{background:linear-gradient(145deg,#fff8ea,#f5efdd)}
+.season-autumn{background:linear-gradient(145deg,#fff7ee,#f3ebdf)}
+.season-winter{background:linear-gradient(145deg,#faf9f6,#eceef1)}
+.hero-portrait-wrap{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:center;margin-top:10px}
+.portrait-frame{height:118px;border-radius:16px;border:1px solid #dfd3c4;background:#f4eadc;padding:6px;display:flex}
+.portrait-frame img{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.portrait-fallback{width:100%;border-radius:12px;background:repeating-linear-gradient(135deg,#efe3d4,#efe3d4 10px,#f8f0e6 10px,#f8f0e6 20px);display:grid;place-content:center;text-align:center;color:#6f6052;gap:4px}
+.memory-notes article{display:grid;grid-template-columns:66px 1fr;gap:10px;align-items:center}
+.memory-thumb{width:66px;height:66px;border-radius:12px;border:1px solid #e4d8ca}
+.memory-rain{background:linear-gradient(160deg,#dbe6ee,#f7f3ee)}
+.memory-ant{background:radial-gradient(circle at 30% 35%,#2f3b2d 2px,transparent 3px),linear-gradient(160deg,#ecf0e3,#f7f5ef)}
+.memory-block{background:linear-gradient(160deg,#e8dccd,#f7f0e7)}
+.memory-family{background:linear-gradient(160deg,#f4e5d6,#fbf3e9)}
+.memory-heeseon{background:linear-gradient(160deg,#ece7dc,#f8f4ea)}
+.memory-default{background:linear-gradient(160deg,#ebe4da,#f8f5ee)}
+.event-illustration{margin:10px 0 12px;height:140px;border-radius:14px;border:1px solid #e4d5c3;background:#f6eddf;overflow:hidden}
+.event-illustration img{width:100%;height:100%;object-fit:cover}
+.event-fallback{height:100%;background:linear-gradient(150deg,#efe3d3,#fbf4ea);display:grid;place-content:center;color:#7e6e5d}
+@media (max-width: 560px){.hero-portrait-wrap{grid-template-columns:90px 1fr}.portrait-frame{height:96px}}
