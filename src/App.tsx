@@ -10,7 +10,24 @@ type WeeklyModal = { reflection: string; newMemory?: GameState['memories'][numbe
 const statOrder: StatName[] = ['체력', '지능', '창의력', '감수성', '사회성', '호기심', '집중력', '자존감'];
 const introLines = ['비가 아주 조금 내리던 날,','작은 아이 하나가 세상에 도착했다.','이름은 최동하.','아직 아무것도 정해지지 않은 아이.','이제부터, 당신은 동하의 시간을 함께 걷게 된다.','1살 봄','동하는 아직 말을 잘하지 못한다. 하지만 눈빛만큼은 이상하게 반짝인다.'];
 const endingLabelMap: Record<string, string> = {indieGameCreator:'자기만의 세계를 만드는 아이',belovedGameDirector:'사람들과 함께 무언가를 만드는 아이',natureDocumentaryMaker:'작은 것들을 오래 바라보는 아이',quietNovelist:'조용히 이야기를 품는 아이',warmTeacher:'누군가의 마음을 잘 살피는 아이',lonelyGenius:'혼자만의 방에서 빛나는 아이',lateBloomingOrdinaryLife:'천천히 자기 속도로 피어나는 아이',burnedOutProdigy:'너무 일찍 많은 것을 짊어진 아이'};
-const eventKeyFromMemory = (memory?: GameState['memories'][number]): EventIllustrationKey | undefined => { if (!memory) return undefined; if (memory.tags.includes('rain')) return 'rainy_window'; if (memory.tags.includes('firstBugEncounter')) return 'tiny_ant'; if (memory.title.includes('강아지')) return 'strange_dog'; if (memory.tags.includes('heeseonSeed')) return 'heeseon_seed'; if (memory.tags.includes('rest')) return 'long_nap'; if (memory.tags.includes('creator')) return 'creative_block_tower'; return 'first_why';};
+const eventKeyFromMemory = (memory?: GameState['memories'][number]): EventIllustrationKey | undefined => {
+  if (!memory) return undefined;
+
+  const { title, tags } = memory;
+
+  if (title.includes('품 안에서') || tags.includes('family') || tags.includes('comfort')) return 'parents_comfort';
+  if (title.includes('할머니') || tags.includes('grandma') || tags.includes('walkingGrandma')) return 'walking_grandma';
+  if (title.includes('동네 아이') || title.includes('놀이터에서 마주친 아이') || tags.includes('friend') || tags.includes('neighborhoodChild')) return 'neighborhood_child';
+  if (title.includes('강아지') || tags.includes('animal') || tags.includes('strangeDog')) return 'strange_dog';
+  if (title.includes('왜') || tags.includes('language') || tags.includes('curiosity')) return 'first_why';
+  if (tags.includes('rain')) return 'rainy_window';
+  if (tags.includes('firstBugEncounter') || tags.includes('bug') || tags.includes('nature')) return 'tiny_ant';
+  if (tags.includes('creator') || tags.includes('blocks')) return 'creative_block_tower';
+  if (tags.includes('heeseonSeed')) return 'heeseon_seed';
+  if (tags.includes('rest') || title.includes('낮잠')) return 'long_nap';
+
+  return undefined;
+};
 
 export default function App() {
 const [scene,setScene]=useState<Scene>('title'); const [state,setState]=useState<GameState>(createInitialState()); const [selected,setSelected]=useState<ScheduleId|null>(null); const [message,setMessage]=useState('');
