@@ -49,5 +49,8 @@ export type GameState = {
   weeklyActivityHistory: ScheduleId[];
   recentConsecutiveActiveWeeks: number;
   weeklyReflections: string[];
+  emotionState: EmotionState;
   updatedAt: string;
 };
+
+export type EmotionState = 'calm'|'happy'|'tired'|'stressed'|'sick'|'curious'|'dreaming';
