@@ -1,107 +1,101 @@
 import type { GameState, ScheduleId, StatName, Stats } from './types';
 
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
+const SEASONS = ['봄', '여름', '가을', '겨울'] as const;
 
 export const schedules: Record<
   ScheduleId,
   {
     name: string;
-    effects: Partial<Record<StatName | 'money', number>>;
+    effects: Partial<Record<StatName, number>>;
+    fatigue: number;
+    stress: number;
     description: string;
   }
 > = {
-  study: { name: '공부하기', effects: { 지능: 5, 스트레스: 4, 체력: -2 }, description: '지능 +5 / 스트레스 +4 / 체력 -2' },
-  coding: { name: '코딩 연습', effects: { 코딩력: 6, 창의력: 3, 스트레스: 5, 체력: -3 }, description: '코딩력 +6 / 창의력 +3 / 스트레스 +5 / 체력 -3' },
-  workout: { name: '운동하기', effects: { 운동: 5, 체력: 3, 스트레스: 2 }, description: '운동 +5 / 체력 +3 / 스트레스 +2' },
-  draw: { name: '그림/상상 노트 쓰기', effects: { 창의력: 5, 감성: 3, 스트레스: -1 }, description: '창의력 +5 / 감성 +3 / 스트레스 -1' },
-  date: { name: '희선과 데이트', effects: { 행복도: 8, 매력: 2, 스트레스: -5, money: -8000 }, description: '행복도 +8 / 매력 +2 / 스트레스 -5 / 돈 -8000' },
-  jjajang: { name: '짜장면 먹기', effects: { 행복도: 4, 체력: 2, money: -7000 }, description: '행복도 +4 / 체력 +2 / 돈 -7000' },
-  sweetBread: { name: '단팥빵 먹기', effects: { 행복도: 3, 스트레스: -2, money: -2500 }, description: '행복도 +3 / 스트레스 -2 / 돈 -2500' },
+  speech: { name: '말 배우기', effects: { 지능: 3, 사회성: 1, 집중력: 1 }, fatigue: 1, stress: 0, description: '지능 +3 / 사회성 +1 / 집중력 +1 / 피로 +1' },
+  storybook: { name: '그림책 보기', effects: { 지능: 1, 감수성: 3, 호기심: 2 }, fatigue: 1, stress: -1, description: '감수성 +3 / 호기심 +2 / 스트레스 -1 / 피로 +1' },
+  blocks: { name: '블록 쌓기', effects: { 창의력: 3, 집중력: 2 }, fatigue: 1, stress: 0, description: '창의력 +3 / 집중력 +2 / 피로 +1' },
+  walk: { name: '산책하기', effects: { 체력: 2, 감수성: 1, 호기심: 1 }, fatigue: 1, stress: -2, description: '체력 +2 / 스트레스 -2 / 피로 +1' },
+  nap: { name: '낮잠 자기', effects: { 체력: 2, 자존감: 1 }, fatigue: -3, stress: -2, description: '체력 +2 / 자존감 +1 / 피로 -3 / 스트레스 -2' },
+  toy: { name: '장난감 가지고 놀기', effects: { 창의력: 2, 호기심: 2, 자존감: 1 }, fatigue: 1, stress: -1, description: '창의력 +2 / 호기심 +2 / 자존감 +1 / 피로 +1' },
+  family: { name: '엄마 아빠와 시간 보내기', effects: { 사회성: 2, 감수성: 2, 자존감: 2 }, fatigue: 0, stress: -2, description: '사회성 +2 / 감수성 +2 / 자존감 +2 / 스트레스 -2' },
+  daydream: { name: '멍하니 상상하기', effects: { 창의력: 3, 감수성: 2 }, fatigue: -1, stress: -1, description: '창의력 +3 / 감수성 +2 / 피로 -1 / 스트레스 -1' },
 };
 
 export function createInitialState(): GameState {
   return {
-    player: { name: '동하', age: 17, month: 3, week: 1, money: 50000 },
-    stats: { 체력: 50, 스트레스: 10, 지능: 60, 감성: 55, 매력: 45, 운동: 40, 도덕성: 50, 창의력: 70, 코딩력: 35, 행복도: 60 },
-    flags: { heesunDating: true, afraidOfBugs: true, likesRedPepperJjajang: true, likesSweetRedBeanBread: true },
+    player: { name: '동하', age: 1, season: 0, week: 1, money: 0 },
+    stats: { 체력: 30, 지능: 20, 창의력: 20, 감수성: 25, 사회성: 20, 호기심: 30, 집중력: 15, 자존감: 25 },
+    fatigue: 0,
+    stress: 0,
+    actionsLeft: 3,
+    actionsPerWeek: 3,
+    flags: { introSeen: false },
     logs: [],
     updatedAt: new Date().toISOString(),
   };
 }
 
 export function getDateLabel(state: GameState) {
-  return `${state.player.age}세 / ${state.player.month}월 ${state.player.week}주차`;
+  return `동하 ${state.player.age}살 · ${SEASONS[state.player.season]} · ${state.player.week}주차`;
 }
 
 function statusSummary(stats: Stats) {
-  if (stats.스트레스 >= 70) return '조금 지쳐 보입니다. 이번 주는 무리를 줄이는 편이 좋아요.';
-  if (stats.행복도 >= 80) return '표정이 한결 밝습니다. 좋은 흐름이 이어지고 있어요.';
-  if (stats.코딩력 >= 50) return '아이디어를 구현해보고 싶은 의지가 강해졌습니다.';
-  return '오늘도 차분하게 하루를 준비하고 있습니다.';
+  if (stats.자존감 >= 70) return '동하는 작은 성공에도 자신 있게 웃습니다.';
+  if (stats.호기심 >= 70) return '동하는 세상의 모든 것에 질문을 던집니다.';
+  return '동하는 아직 말을 잘하지 못하지만, 눈빛은 반짝입니다.';
 }
 
 export function runWeek(state: GameState, scheduleId: ScheduleId) {
+  if (state.actionsLeft <= 0) {
+    return { state, summary: '이번 주 행동을 모두 사용했습니다.', resultLines: ['이번 주를 마무리해 주세요.'], scheduleName: '행동 불가' };
+  }
+
   const selected = schedules[scheduleId];
   const next: GameState = structuredClone(state);
   const lines: string[] = [];
 
   Object.entries(selected.effects).forEach(([key, delta]) => {
     if (!delta) return;
-    if (key === 'money') {
-      next.player.money += delta;
-      lines.push(`돈 ${delta > 0 ? '+' : ''}${delta}`);
-      return;
-    }
     const statKey = key as StatName;
     next.stats[statKey] = clamp(next.stats[statKey] + delta);
     lines.push(`${statKey} ${delta > 0 ? '+' : ''}${delta}`);
   });
 
-  if (scheduleId === 'jjajang') {
-    lines.push('동하는 오늘도 고춧가루를 믿을 수 없을 만큼 뿌렸다.');
-  }
+  next.fatigue = clamp(next.fatigue + selected.fatigue);
+  next.stress = clamp(next.stress + selected.stress);
+  next.actionsLeft -= 1;
 
-  if (next.stats.코딩력 >= 50) {
-    lines.push('동하는 자신만의 작은 게임 아이디어를 노트에 적기 시작했다.');
-  }
-  if (next.stats.스트레스 >= 70) {
-    lines.push('동하는 잠시 쉬고 싶어 한다. 무리한 일정은 위험할 수 있다.');
-  }
-  if (next.stats.행복도 >= 80 && next.flags.heesunDating) {
-    lines.push('희선의 응원 덕분에 동하는 오늘도 기분 좋게 하루를 보냈다.');
-  }
-
-  if (next.flags.afraidOfBugs && Math.random() < 0.13) {
-    next.stats.스트레스 = clamp(next.stats.스트레스 + 8);
-    next.stats.체력 = clamp(next.stats.체력 - 2);
-    lines.push('갑자기 벌레가 나타났다. 동하는 거의 공중부양하듯 놀랐다.');
-    lines.push('추가 효과: 스트레스 +8, 체력 -2');
-  }
+  lines.push(`피로도 ${selected.fatigue >= 0 ? '+' : ''}${selected.fatigue}`);
+  lines.push(`스트레스 ${selected.stress >= 0 ? '+' : ''}${selected.stress}`);
 
   const weekLabel = getDateLabel(next);
   next.logs = [{ weekLabel, scheduleName: selected.name, lines }, ...next.logs].slice(0, 24);
-
-  if (next.player.week >= 4) {
-    next.player.week = 1;
-    next.player.month += 1;
-  } else {
-    next.player.week += 1;
-  }
-
   next.updatedAt = new Date().toISOString();
 
   return { state: next, summary: statusSummary(next.stats), resultLines: lines, scheduleName: selected.name };
 }
 
+export function advanceWeek(state: GameState) {
+  const next: GameState = structuredClone(state);
+  if (next.player.week >= 4) {
+    next.player.week = 1;
+    if (next.player.season >= 3) {
+      next.player.season = 0;
+      next.player.age += 1;
+    } else {
+      next.player.season += 1;
+    }
+  } else {
+    next.player.week += 1;
+  }
+  next.actionsLeft = next.actionsPerWeek;
+  next.fatigue = Math.max(0, next.fatigue - 2);
+  next.stress = Math.max(0, next.stress - 1);
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
+
 export const SAVE_VERSION = 1;
 export const validateState = (_s: GameState) => true;
-export function applyActivity(s: GameState, id: string) {
-  const map: Record<string, ScheduleId> = {
-    math: 'study', english: 'study', exam: 'study',
-    coding: 'coding', walk: 'workout', gym: 'workout',
-    date: 'date', jjajang: 'jjajang', anpan: 'sweetBread',
-  };
-  const picked = map[id] ?? 'study';
-  const r = runWeek(s, picked);
-  return { state: r.state, activity: { name: schedules[picked].name, resultTexts: [r.resultLines.join(' / ')] }, event: null };
-}

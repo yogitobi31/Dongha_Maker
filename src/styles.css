@@ -50,3 +50,12 @@ h1 { margin: 10px 0 6px; font-size: clamp(36px, 8vw, 56px); }
   .top-card, .stats-grid, .summary-card, .schedule-card, .footer-actions, .log-card, .toast { grid-column: 1 / -1; }
   .stats-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
 }
+
+.intro-page { min-height: 100dvh; display: grid; place-items: center; padding: 20px; background: radial-gradient(circle at 10% 10%, #f7f3ee, #ece3d8); }
+.intro-card { width: min(680px, 100%); background: rgba(255,255,255,.84); border: 1px solid var(--line); border-radius: 20px; padding: 24px 18px; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+.intro-line { margin: 10px 0; opacity: 0; transform: translateY(6px); transition: opacity .8s ease, transform .8s ease; line-height: 1.6; }
+.intro-line.visible { opacity: 1; transform: translateY(0); }
+.intro-actions { display:flex; gap:10px; justify-content:flex-end; margin-top: 20px; }
+.intro-actions button { border:1px solid var(--line); background:#fff; border-radius:10px; padding:10px 12px; }
+.run-button.finish { margin-top: 8px; background: #9ba8b8; }
+.run-button.finish.emphasize { background: #ba6b4b; font-weight: 700; }
