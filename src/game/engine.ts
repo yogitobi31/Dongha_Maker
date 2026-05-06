@@ -1,4 +1,4 @@
-import type { EndingSeedName, GameState, HiddenTraitName, MemoryFragment, ScheduleId, SeasonLabel, StatName, Stats } from './types';
+import type { EmotionState, EndingSeedName, GameState, HiddenTraitName, MemoryFragment, ScheduleId, SeasonLabel, StatName, Stats } from './types';
 
 const clamp = (value: number, min = 0, max = 100) => Math.max(min, Math.min(max, value));
 const SEASONS: SeasonLabel[] = ['봄', '여름', '가을', '겨울'];
@@ -20,6 +20,17 @@ export const schedules = {
   daydream: { name:'멍하니 상상하기', effects:{창의력:3,감수성:2}, fatigue:-1, stress:-1, description:'창의력 +3 / 감수성 +2 / 피로 -1 / 스트레스 -1', hiddenTraitEffects:{dreamer:2,creator:1,loner:1}, endingSeedEffects:{indieGameCreator:1,quietNovelist:1,lonelyGenius:0.5} },
 } as const;
 
+export const resultSceneTexts: Record<ScheduleId, string[]> = {
+  speech: ['동하는 무언가 말하려는 듯 입술을 오물거렸다.','정확한 말은 아니었지만, 그 소리에는 분명한 의도가 있었다.'],
+  storybook: ['동하는 그림책의 한 페이지를 오래 바라보았다.','그림보다 그 안쪽의 세상이 더 궁금한 것 같았다.'],
+  blocks: ['동하는 블록을 반듯하게 쌓다가 갑자기 이상한 방향으로 돌렸다.','완성된 모양은 이상했지만, 동하는 꽤 만족스러워 보였다.'],
+  walk: ['동하는 산책길에서 작은 것들을 자꾸 멈춰 바라보았다.','나뭇잎, 돌멩이, 개미 한 마리도 동하에게는 사건이었다.'],
+  nap: ['동하는 한참을 뒤척이다가 조용히 잠들었다.','잠든 얼굴은 조금 편안해 보였다.'],
+  toy: ['동하는 장난감을 정해진 방식대로 가지고 놀지 않았다.','자기만의 규칙이 있는 것처럼 보였다.'],
+  family: ['동하는 가까운 품 안에서 조금 더 편안해졌다.','세상이 아직은 안전한 곳이라고 느낀 것 같았다.'],
+  daydream: ['동하는 아무것도 하지 않는 것처럼 보였다.','하지만 눈빛은 어딘가 아주 멀리 가 있었다.'],
+};
+
 const specialMemoryTemplates: Omit<MemoryFragment, 'age'|'season'|'week'>[] = [
   { id: 'first_why_sound_001', title: '처음 터진 "왜?" 같은 소리', text: '동하는 무언가를 궁금해하듯 짧은 소리를 냈다.', tags: ['language','curiosity','childhood'], emotionalTone: 'curious', importance: 3 },
   { id: 'rainy_window_001', title: '비 오는 날의 창문', text: '동하는 비 오는 창밖을 오래 바라보았다.', tags: ['dreamer','sensitivity','rain','childhood'], emotionalTone: 'quiet', importance: 2 },
@@ -29,7 +40,7 @@ const specialMemoryTemplates: Omit<MemoryFragment, 'age'|'season'|'week'>[] = [
   { id: 'busy_mind_001', title: '조용한데 바쁜 머릿속', text: '겉으로는 조용했지만 동하의 눈빛은 바쁘게 흔들렸다.', tags: ['dreamer','inner-world','loner','childhood'], emotionalTone: 'quiet', importance: 2 },
 ];
 
-export function createInitialState(): GameState { return { player:{name:'동하',age:1,season:0,week:1,money:0}, stats:{체력:30,지능:20,창의력:20,감수성:25,사회성:20,호기심:30,집중력:15,자존감:25}, fatigue:0, stress:0, actionsLeft:3, actionsPerWeek:3, flags:{introSeen:false}, logs:[], memories:[], growthProfile:{hiddenTraits:mkTraits(),eventFlags:{firstWordLikeWhy:false,firstCreativeBlockTower:false,staredAtRainForLong:false,noticedTinyAnt:false,firstBurnout:false,firstCold:false},relationshipScores:{parents:0},endingSeeds:mkEndings()}, weeklyActivityHistory:[], recentConsecutiveActiveWeeks:0, weeklyReflections:[], updatedAt:new Date().toISOString() }; }
+export function createInitialState(): GameState { return { player:{name:'동하',age:1,season:0,week:1,money:0}, stats:{체력:30,지능:20,창의력:20,감수성:25,사회성:20,호기심:30,집중력:15,자존감:25}, fatigue:0, stress:0, actionsLeft:3, actionsPerWeek:3, flags:{introSeen:false}, logs:[], memories:[], growthProfile:{hiddenTraits:mkTraits(),eventFlags:{firstWordLikeWhy:false,firstCreativeBlockTower:false,staredAtRainForLong:false,noticedTinyAnt:false,firstBurnout:false,firstCold:false,deepRestDay:false},relationshipScores:{parents:0},endingSeeds:mkEndings()}, weeklyActivityHistory:[], recentConsecutiveActiveWeeks:0, weeklyReflections:[], emotionState:'calm', updatedAt:new Date().toISOString() }; }
 
 export function getDateLabel(state: GameState) { return `동하 ${state.player.age}살 · ${SEASONS[state.player.season]} · ${state.player.week}주차`; }
 
@@ -40,6 +51,17 @@ function addMemory(state: GameState, seed: Omit<MemoryFragment, 'age'|'season'|'
 function bumpTraits(state: GameState, effects: Partial<Record<HiddenTraitName, number>>) { Object.entries(effects).forEach(([k,v]) => { if (!v) return; state.growthProfile.hiddenTraits[k as HiddenTraitName] += v; }); }
 function bumpSeeds(state: GameState, effects: Partial<Record<EndingSeedName, number>>) { Object.entries(effects).forEach(([k,v]) => { if (!v) return; state.growthProfile.endingSeeds[k as EndingSeedName] += v; }); }
 
+
+export function resolveEmotionState(state: GameState): EmotionState {
+  if (state.fatigue >= 70) return 'tired';
+  if (state.stress >= 70) return 'stressed';
+  if (state.stats.체력 <= 50) return 'sick';
+  if (state.growthProfile.hiddenTraits.dreamer >= 12) return 'dreaming';
+  if (state.stats.호기심 >= 55 || state.growthProfile.hiddenTraits.explorer >= 10) return 'curious';
+  if (state.growthProfile.hiddenTraits.empathetic >= 8 && state.stress <= 35) return 'happy';
+  return 'calm';
+}
+
 export function applyStatEffects(state: GameState, scheduleId: ScheduleId, lines: string[]) {
   const selected = schedules[scheduleId] as any;
   Object.entries(selected.effects as Record<string, number>).forEach(([key, rawDelta]) => { const delta = Number(rawDelta); const statKey = key as StatName; state.stats[statKey] = clamp(state.stats[statKey] + delta); lines.push(`${statKey} ${delta > 0 ? '+' : ''}${delta}`); });
@@ -49,11 +71,45 @@ export function applyHiddenTraitEffects(state: GameState, scheduleId: ScheduleId
 
 export function checkEventFlags(state: GameState, scheduleId: ScheduleId) {
   const flags = state.growthProfile.eventFlags;
-  if (scheduleId === 'speech' && state.stats.지능 >= 24 && !flags.firstWordLikeWhy) { flags.firstWordLikeWhy = true; addMemory(state, specialMemoryTemplates[0]); }
-  if (scheduleId === 'blocks' && !flags.firstCreativeBlockTower) { flags.firstCreativeBlockTower = true; addMemory(state, specialMemoryTemplates[2]); }
-  if (scheduleId === 'daydream' && !flags.staredAtRainForLong) { flags.staredAtRainForLong = true; addMemory(state, specialMemoryTemplates[1]); }
-  if (scheduleId === 'walk' && !flags.noticedTinyAnt) { flags.noticedTinyAnt = true; addMemory(state, specialMemoryTemplates[3]); }
-  if (state.fatigue >= 90 && !flags.firstBurnout) { flags.firstBurnout = true; }
+  const isEarlyAge = state.player.age >= 1 && state.player.age <= 3;
+  const sameActionCount = state.weeklyActivityHistory.filter((id) => id === scheduleId).length;
+
+  if (isEarlyAge && scheduleId === 'speech' && sameActionCount >= 3 && !flags.firstWordLikeWhy) {
+    flags.firstWordLikeWhy = true;
+    bumpTraits(state, { anxious: 0, explorer: 0 });
+    state.stats.지능 = clamp(state.stats.지능 + 1);
+    state.stats.호기심 = clamp(state.stats.호기심 + 2);
+    addMemory(state, specialMemoryTemplates[0]);
+  }
+  if (isEarlyAge && scheduleId === 'blocks' && sameActionCount >= 3 && !flags.firstCreativeBlockTower) {
+    flags.firstCreativeBlockTower = true;
+    bumpTraits(state, { creator: 2, obsessive: 1 });
+    addMemory(state, specialMemoryTemplates[2]);
+  }
+  if (isEarlyAge && (state.player.season === 0 || state.player.season === 1) && (scheduleId === 'daydream' || scheduleId === 'storybook') && !flags.staredAtRainForLong && Math.random() < 0.15) {
+    flags.staredAtRainForLong = true;
+    bumpTraits(state, { dreamer: 2 });
+    state.stats.감수성 = clamp(state.stats.감수성 + 1);
+    addMemory(state, specialMemoryTemplates[1]);
+  }
+  if (isEarlyAge && scheduleId === 'walk' && !flags.noticedTinyAnt && Math.random() < 0.18) {
+    flags.noticedTinyAnt = true;
+    bumpTraits(state, { explorer: 2 });
+    state.stats.호기심 = clamp(state.stats.호기심 + 2);
+    addMemory(state, specialMemoryTemplates[3]);
+  }
+  if (isEarlyAge && state.fatigue >= 90 && !flags.firstBurnout) {
+    flags.firstBurnout = true;
+    bumpTraits(state, { anxious: 2 });
+    state.stats.체력 = clamp(state.stats.체력 - 5);
+    addMemory(state, { id: 'first_burnout_001', title: '너무 많이 지친 날', text: '동하는 하루가 끝날 즈음, 아무 말 없이 작게 웅크렸다.', tags: ['fatigue','anxious'], emotionalTone: 'tired', importance: 3 });
+  }
+  if (isEarlyAge && scheduleId === 'nap' && state.fatigue >= 60 && !flags.deepRestDay) {
+    flags.deepRestDay = true;
+    bumpTraits(state, { stable: 2 });
+    state.stats.체력 = clamp(state.stats.체력 + 3);
+    addMemory(state, specialMemoryTemplates[4]);
+  }
 }
 
 export function checkMemoryTriggers(state: GameState, scheduleId: ScheduleId) {
@@ -82,10 +138,12 @@ export function getEndingCandidates(state: GameState) {
 export function getWeeklyReflection(state: GameState) {
   const [top] = getDominantTraits(state);
   const lines: string[] = [];
-  if (top?.[0] === 'dreamer') lines.push('동하는 오늘도 혼자 무언가를 상상하는 시간이 길었다.');
-  if (top?.[0] === 'explorer') lines.push('동하는 산책길에서 작은 것들을 오래 바라보았다.');
-  if (state.fatigue >= 70) lines.push('동하는 조금 지친 것 같다. 쉬는 시간이 필요해 보인다.');
-  if (state.stats.사회성 + state.growthProfile.hiddenTraits.empathetic > 40) lines.push('동하는 누군가와 함께 있을 때 더 편안해 보였다.');
+  if (top?.[0] === 'dreamer') lines.push('동하는 아무 일도 없는 듯 보였지만, 안쪽에서는 무언가를 오래 상상했다.');
+  if (top?.[0] === 'explorer') lines.push('동하는 이번 주에 작은 것들을 유난히 오래 바라보았다.');
+  if (top?.[0] === 'creator') lines.push('동하는 정해진 방식보다 자기만의 방법을 더 자주 선택했다.');
+  if (state.fatigue >= 70) lines.push('조금 피곤했지만, 동하는 그래도 자기 속도로 하루를 건넜다.');
+  if (state.stress >= 70) lines.push('마음이 조금 복잡해 보였고, 조용한 쉬는 시간이 필요해 보였다.');
+  if (state.stats.사회성 + state.growthProfile.hiddenTraits.empathetic > 40) lines.push('이번 주의 동하는 누군가 곁에 있을 때 더 편안해 보였다.');
   return lines[0] ?? '동하는 천천히, 자기만의 속도로 한 주를 건넜다.';
 }
 
@@ -99,8 +157,10 @@ export function applyActivity(state: GameState, scheduleId: ScheduleId) {
   checkEventFlags(next, scheduleId); checkMemoryTriggers(next, scheduleId); updateEndingSeeds(next);
   const weekLabel = getDateLabel(next);
   next.logs = [{ weekLabel, scheduleName: schedules[scheduleId].name, lines }, ...next.logs].slice(0, 24);
+  next.emotionState = resolveEmotionState(next);
   next.updatedAt = new Date().toISOString();
-  return { state: next, summary: getWeeklyReflection(next), resultLines: lines, scheduleName: schedules[scheduleId].name, newMemories: next.memories.slice(-2) };
+  const sceneLines = resultSceneTexts[scheduleId];
+  return { state: next, summary: getWeeklyReflection(next), resultLines: lines, scheduleName: schedules[scheduleId].name, resultSceneText: sceneLines[Math.floor(Math.random()*sceneLines.length)], newMemories: next.memories.slice(-2) };
 }
 
 export function endWeek(state: GameState) {
@@ -117,7 +177,8 @@ export function advanceTime(state: GameState) {
   if (next.player.week >= 4) { next.player.week = 1; next.player.season = next.player.season >= 3 ? 0 : next.player.season + 1; if (next.player.season === 0) next.player.age += 1; } else next.player.week += 1;
   if (next.player.season !== prevSeason) addMemory(next, { id:`season_shift_${next.player.age}_${next.player.season}_${next.player.week}`, title:'계절이 바뀐 공기', text:'동하는 달라진 바람 냄새를 가만히 느꼈다.', tags:['season-change','growth','time'], emotionalTone:'quiet', importance:1 });
   if (next.player.age !== prevAge) addMemory(next, { id:`birthday_${next.player.age}`, title:`${next.player.age}살이 된 날`, text:'동하는 조금 더 자란 얼굴로 새로운 계절을 맞이했다.', tags:['age-change','milestone','growth'], emotionalTone:'warm', importance:2 });
-  next.actionsLeft = next.actionsPerWeek; next.fatigue = Math.max(0, next.fatigue - 2); next.stress = Math.max(0, next.stress - 1); next.weeklyActivityHistory = []; next.updatedAt = new Date().toISOString();
+  next.actionsLeft = next.actionsPerWeek; next.fatigue = Math.max(0, next.fatigue - 2); next.stress = Math.max(0, next.stress - 1); next.weeklyActivityHistory = []; next.emotionState = resolveEmotionState(next);
+  next.updatedAt = new Date().toISOString();
   return next;
 }
 

@@ -21,7 +21,7 @@ h1 { margin: 10px 0 6px; font-size: clamp(36px, 8vw, 56px); }
 .menu-list button { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 14px 16px; text-align: left; }
 .title-message { margin: 20px 0 0; color: #7b5033; }
 
-.main-page { max-width: 980px; margin: 0 auto; padding: 16px 14px 36px; display: grid; gap: 12px; }
+.main-page { max-width: 980px; margin: 0 auto; padding: 16px 14px calc(96px + env(safe-area-inset-bottom)); display: grid; gap: 14px; }
 .top-card, .summary-card, .schedule-card, .footer-actions, .log-card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; box-shadow: 0 8px 22px rgba(40,30,20,.07); }
 .top-card { display: flex; justify-content: space-between; align-items: center; }
 .top-card .date { margin: 0; color: var(--muted); }
@@ -43,7 +43,7 @@ h1 { margin: 10px 0 6px; font-size: clamp(36px, 8vw, 56px); }
 .footer-actions { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
 .footer-actions button { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px; }
 .log-card p { margin: 8px 0; color: #4a3f35; }
-.toast { position: sticky; bottom: 10px; margin: 0; background: rgba(44,37,30,.92); color: #fff4e4; padding: 12px; border-radius: 12px; }
+.toast { position: sticky; bottom: calc(16px + env(safe-area-inset-bottom)); white-space: pre-line; margin: 0; background: rgba(44,37,30,.92); color: #fff4e4; padding: 12px; border-radius: 12px; font-size: 13px; }
 
 @media (min-width: 768px) {
   .main-page { grid-template-columns: 1.1fr 1fr; }
@@ -57,5 +57,11 @@ h1 { margin: 10px 0 6px; font-size: clamp(36px, 8vw, 56px); }
 .intro-line.visible { opacity: 1; transform: translateY(0); }
 .intro-actions { display:flex; gap:10px; justify-content:flex-end; margin-top: 20px; }
 .intro-actions button { border:1px solid var(--line); background:#fff; border-radius:10px; padding:10px 12px; }
-.run-button.finish { margin-top: 8px; background: #9ba8b8; }
+.run-button.finish { margin-top: 0; background: #9ba8b8; }
 .run-button.finish.emphasize { background: #ba6b4b; font-weight: 700; }
+
+.action-buttons { display: grid; gap: 14px; margin-top: 14px; }
+.preview-button { background: #6f8296; }
+.log-card article { padding: 10px 0; border-bottom: 1px solid #ece2d4; }
+.log-card article:last-child { border-bottom: 0; }
+.log-card strong { display:block; font-size:16px; margin:4px 0; }

@@ -16,6 +16,18 @@ const introLines = [
   '동하는 아직 말을 잘하지 못한다. 하지만 눈빛만큼은 이상하게 반짝인다.',
 ];
 
+const endingLabelMap: Record<string, string> = {
+  indieGameCreator: '자기만의 세계를 만드는 아이',
+  belovedGameDirector: '사람들과 함께 무언가를 만드는 아이',
+  natureDocumentaryMaker: '작은 것들을 오래 바라보는 아이',
+  quietNovelist: '조용히 이야기를 품는 아이',
+  warmTeacher: '누군가의 마음을 잘 살피는 아이',
+  lonelyGenius: '혼자만의 방에서 빛나는 아이',
+  lateBloomingOrdinaryLife: '천천히 자기 속도로 피어나는 아이',
+  burnedOutProdigy: '너무 일찍 많은 것을 짊어진 아이'
+};
+const emotionLabelMap: Record<string, string> = { calm: '편안함', happy: '밝음', tired: '피곤함', stressed: '예민함', sick: '기운 없음', curious: '호기심 가득', dreaming: '몽상 중' };
+
 export default function App() {
   const [scene, setScene] = useState<Scene>('title');
   const [state, setState] = useState<GameState>(createInitialState());
@@ -66,7 +78,7 @@ export default function App() {
     }
     setState(result.state);
     setStatusLine(result.summary);
-    setMessage(`${result.scheduleName} 실행: ${result.resultLines.join(' / ')}`);
+    setMessage(`${result.resultSceneText}\n${result.resultLines.join(' / ')}`);
     saveGame(result.state);
   };
 
@@ -74,7 +86,7 @@ export default function App() {
     const next = advanceWeek(state);
     setState(next);
     saveGame(next);
-    setMessage(`새로운 주가 시작되었습니다. ${next.weeklyReflections[0] ?? ''}`);
+    setMessage(next.weeklyReflections[0] ?? '동하는 자기 속도로 한 주를 건넜습니다.');
   };
 
   if (scene === 'title') {
@@ -110,6 +122,7 @@ export default function App() {
         <p>이번 주 남은 행동: <strong>{state.actionsLeft} / {state.actionsPerWeek}</strong></p>
         <p>피로도: <strong>{state.fatigue}</strong></p>
         <p>스트레스: <strong>{state.stress}</strong></p>
+        <p>현재 상태: <strong>{emotionLabelMap[state.emotionState]}</strong></p>
       </section>
 
       <section className="stats-grid">
@@ -130,11 +143,13 @@ export default function App() {
           ))}
         </div>
         <button className="run-button" onClick={runSelectedWeek} disabled={state.actionsLeft === 0}>행동 실행</button>
-        <button className={state.actionsLeft === 0 ? 'run-button finish emphasize' : 'run-button finish'} onClick={finishWeek}>이번 주를 마무리하기</button>
-        <button className="run-button" onClick={() => setShowPreview((v) => !v)}>성장 방향 미리보기</button>
+        <div className="action-buttons">
+          <button className={state.actionsLeft === 0 ? 'run-button finish emphasize' : 'run-button finish'} onClick={finishWeek}>이번 주를 마무리하기</button>
+          <button className="run-button preview-button" onClick={() => setShowPreview((v) => !v)}>성장 방향 미리보기</button>
+        </div>
       </section>
 
-      {showPreview ? <section className="summary-card"><h3>현재 성장 방향</h3><p>현재 동하는 이런 방향으로 자라고 있습니다.</p><ol>{endingPreview.map((e, i) => <li key={e.id}>{i+1}. {e.id}</li>)}</ol><p>동하는 자기만의 세계를 만드는 쪽으로 조금씩 기울고 있습니다.</p></section> : null}
+      {showPreview ? <section className="summary-card"><h3>현재 성장 방향</h3><p>현재 동하는 이런 방향으로 자라고 있습니다.</p><ol>{endingPreview.map((e, i) => <li key={e.id}>{i+1}. {endingLabelMap[e.id] ?? '아직 이름 붙이기 어려운 방향'}</li>)}</ol><p>동하는 {endingLabelMap[endingPreview[0]?.id ?? 'indieGameCreator']} 쪽으로 조금씩 기울고 있습니다.</p></section> : null}
 
       <section className="log-card"><h3>동하의 기억</h3>{memoryPreview.length===0 ? <p>아직 특별한 기억이 쌓이지 않았습니다.</p> : memoryPreview.map((m)=><article key={m.id}><p>[{m.age}살 · {m.season}]</p><strong>{m.title}</strong><p>{m.text}</p></article>)}</section>
       {isDev ? <section className="log-card"><h3>개발자 디버그 패널</h3><p>Hidden Traits: {dominantTraits.map(([k,v])=>`${k}:${v.toFixed(1)}`).join(', ')}</p><p>Ending Seeds: {endingPreview.map((x)=>`${x.id}:${x.score}`).join(', ')}</p></section> : null}
