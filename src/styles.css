@@ -74,12 +74,15 @@ h1 { margin: 10px 0 6px; font-size: clamp(36px, 8vw, 56px); }
 .relationship-notes em{font-style:normal;color:#4f4438}
 .relationship-notes span{color:#7a6a5b;font-size:13px}
 @media (min-width: 768px){.relationship-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}}
-.status-hero{position:relative;overflow:hidden}
-.season-bg-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.18;pointer-events:none}
+.status-hero{position:relative;overflow:hidden;min-height:220px}
+.season-bg-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.36;pointer-events:none;z-index:0}
 .season-spring{background:linear-gradient(145deg,#fffbf3,#eef5e8)}
 .season-summer{background:linear-gradient(145deg,#fff8ea,#f5efdd)}
 .season-autumn{background:linear-gradient(145deg,#fff7ee,#f3ebdf)}
 .season-winter{background:linear-gradient(145deg,#faf9f6,#eceef1)}
+.status-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,253,249,.82),rgba(255,253,249,.55));z-index:0;pointer-events:none}
+.status-hero > *:not(.season-bg-image){position:relative;z-index:1}
+
 .hero-portrait-wrap{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:center;margin-top:10px}
 .portrait-frame{height:118px;border-radius:16px;border:1px solid #dfd3c4;background:#f4eadc;padding:6px;display:flex}
 .portrait-frame img{width:100%;height:100%;object-fit:cover;border-radius:12px}
@@ -96,3 +99,9 @@ h1 { margin: 10px 0 6px; font-size: clamp(36px, 8vw, 56px); }
 .event-illustration img{width:100%;height:100%;object-fit:cover}
 .event-fallback{height:100%;background:linear-gradient(150deg,#efe3d3,#fbf4ea);display:grid;place-content:center;color:#7e6e5d}
 @media (max-width: 560px){.hero-portrait-wrap{grid-template-columns:90px 1fr}.portrait-frame{height:96px}}
+
+.dev-image-panel{position:fixed;right:12px;bottom:12px;z-index:70;background:rgba(255,253,249,.92);border:1px solid var(--line);border-radius:12px;padding:8px 10px;max-width:220px;font-size:11px;box-shadow:0 8px 20px rgba(40,30,20,.14)}
+.dev-image-panel strong{display:block;margin-bottom:6px}
+.dev-image-panel ul{list-style:none;margin:0;padding:0;display:grid;gap:4px;max-height:180px;overflow:auto}
+.dev-image-panel li{display:flex;justify-content:space-between;gap:8px}
+.dev-image-panel em{font-style:normal;font-weight:700}

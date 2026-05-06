@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createAndSaveInitialGame, hasSaveData, loadGame, saveGame } from './game/storage';
 import { advanceWeek, createInitialState, getDateLabel, getEndingCandidates, runWeek, schedules } from './game/engine';
 import type { GameState, ScheduleId, StatName } from './game/types';
@@ -9,22 +9,40 @@ type ActivityModal = { sceneText: string; resultLines: string[]; newMemories: Ga
 type WeeklyModal = { reflection: string; newMemory?: GameState['memories'][number];};
 const statOrder: StatName[] = ['체력', '지능', '창의력', '감수성', '사회성', '호기심', '집중력', '자존감'];
 const introLines = ['비가 아주 조금 내리던 날,','작은 아이 하나가 세상에 도착했다.','이름은 최동하.','아직 아무것도 정해지지 않은 아이.','이제부터, 당신은 동하의 시간을 함께 걷게 된다.','1살 봄','동하는 아직 말을 잘하지 못한다. 하지만 눈빛만큼은 이상하게 반짝인다.'];
+
+const devImageTargets = import.meta.env.DEV ? [
+  '/assets/dongha/seasons/spring-bg.png',
+  '/assets/dongha/seasons/summer-bg.png',
+  '/assets/dongha/seasons/autumn-bg.png',
+  '/assets/dongha/seasons/winter-bg.png',
+  '/assets/dongha/events/rainy_window.png',
+  '/assets/dongha/events/tiny_ant.png',
+  '/assets/dongha/events/creative_block_tower.png',
+  '/assets/dongha/events/heeseon_seed.png',
+  '/assets/dongha/events/long_nap.png',
+  '/assets/dongha/events/strange_dog.png',
+  '/assets/dongha/events/first_why.png',
+  '/assets/dongha/events/parents_comfort.png',
+  '/assets/dongha/events/walking_grandma.png',
+  '/assets/dongha/events/neighborhood_child.png'
+] : [];
+
 const endingLabelMap: Record<string, string> = {indieGameCreator:'자기만의 세계를 만드는 아이',belovedGameDirector:'사람들과 함께 무언가를 만드는 아이',natureDocumentaryMaker:'작은 것들을 오래 바라보는 아이',quietNovelist:'조용히 이야기를 품는 아이',warmTeacher:'누군가의 마음을 잘 살피는 아이',lonelyGenius:'혼자만의 방에서 빛나는 아이',lateBloomingOrdinaryLife:'천천히 자기 속도로 피어나는 아이',burnedOutProdigy:'너무 일찍 많은 것을 짊어진 아이'};
 const eventKeyFromMemory = (memory?: GameState['memories'][number]): EventIllustrationKey | undefined => {
   if (!memory) return undefined;
 
   const { title, tags } = memory;
 
-  if (title.includes('품 안에서') || tags.includes('family') || tags.includes('comfort')) return 'parents_comfort';
+  if (title.includes('품 안에서') || tags.includes('family') || tags.includes('comfort') || tags.includes('warm')) return 'parents_comfort';
   if (title.includes('할머니') || tags.includes('grandma') || tags.includes('walkingGrandma')) return 'walking_grandma';
   if (title.includes('동네 아이') || title.includes('놀이터에서 마주친 아이') || tags.includes('friend') || tags.includes('neighborhoodChild')) return 'neighborhood_child';
   if (title.includes('강아지') || tags.includes('animal') || tags.includes('strangeDog')) return 'strange_dog';
-  if (title.includes('왜') || tags.includes('language') || tags.includes('curiosity')) return 'first_why';
-  if (tags.includes('rain')) return 'rainy_window';
-  if (tags.includes('firstBugEncounter') || tags.includes('bug') || tags.includes('nature')) return 'tiny_ant';
-  if (tags.includes('creator') || tags.includes('blocks')) return 'creative_block_tower';
-  if (tags.includes('heeseonSeed')) return 'heeseon_seed';
-  if (tags.includes('rest') || title.includes('낮잠')) return 'long_nap';
+  if (tags.includes('rain') || title.includes('비 오는')) return 'rainy_window';
+  if (tags.includes('firstBugEncounter') || tags.includes('bug') || tags.includes('nature') || title.includes('벌레') || title.includes('개미')) return 'tiny_ant';
+  if (tags.includes('creator') || tags.includes('blocks') || title.includes('블록')) return 'creative_block_tower';
+  if (tags.includes('heeseonSeed') || title.includes('또렷한 눈빛')) return 'heeseon_seed';
+  if (tags.includes('rest') || title.includes('낮잠') || title.includes('잠')) return 'long_nap';
+  if (title.includes('왜') || tags.includes('language')) return 'first_why';
 
   return undefined;
 };
@@ -33,12 +51,23 @@ export default function App() {
 const [scene,setScene]=useState<Scene>('title'); const [state,setState]=useState<GameState>(createInitialState()); const [selected,setSelected]=useState<ScheduleId|null>(null); const [message,setMessage]=useState('');
 const [showPreview,setShowPreview]=useState(false); const [activityModal,setActivityModal]=useState<ActivityModal|null>(null); const [weeklyModal,setWeeklyModal]=useState<WeeklyModal|null>(null);
 const [portraitFailed,setPortraitFailed]=useState(false); const [seasonImageFailed,setSeasonImageFailed]=useState(false); const [eventImageFailed,setEventImageFailed]=useState(false);
+const [devImageStatus, setDevImageStatus] = useState<Record<string, 'OK' | 'FAIL'>>({});
 const memoryPreview=useMemo(()=>state.memories.slice(-6).reverse(),[state.memories]); const endingPreview=useMemo(()=>getEndingCandidates(state),[state]); const relationshipList=useMemo(()=>Object.values(state.relationships),[state.relationships]);
 const currentSeason=(state.memories.length?state.memories[state.memories.length-1].season:['봄','여름','가을','겨울'][state.player.season]) as '봄'|'여름'|'가을'|'겨울'; const seasonMeta=seasonVisualMeta[currentSeason]; const statusLine=emotionNarrativeMap[state.emotionState];
 const portraitPath=getDonghaPortraitPath(state.player.age,state.emotionState);
+
+useEffect(() => {
+  if (!import.meta.env.DEV) return;
+  devImageTargets.forEach((src) => {
+    const img = new Image();
+    img.onload = () => setDevImageStatus((prev) => ({ ...prev, [src]: 'OK' }));
+    img.onerror = () => setDevImageStatus((prev) => ({ ...prev, [src]: 'FAIL' }));
+    img.src = src;
+  });
+}, []);
 const startNewGame=()=>{if(hasSaveData()&&!window.confirm('기존 저장 데이터를 덮어쓰고 새 게임을 시작할까요?'))return; const initial=createAndSaveInitialGame(); setState(initial); setSelected(null); setScene('intro'); setMessage('');};
 const continueGame=()=>{const loaded=loadGame(); if(!loaded)return setMessage('아직 저장된 기록이 없습니다.'); setState(loaded); setScene('main'); setMessage('기록을 불러왔습니다.');};
-const runSelectedWeek=()=>{if(!selected)return; const prevMemories=state.memories.length; const result=runWeek(state,selected); if(result.state===state)return setMessage('행동 횟수를 모두 사용했습니다. 이번 주를 마무리해 주세요.'); setState(result.state); saveGame(result.state); const latest=result.state.memories.slice(prevMemories); const rare=latest.find((m)=>m.importance>=3); setEventImageFailed(false); setActivityModal({sceneText:result.resultSceneText??'동하는 오늘도 자기만의 시간을 보냈다.',resultLines:result.resultLines,scheduleName:result.scheduleName,newMemories:latest,eventIllustrationKey:eventKeyFromMemory(rare??latest[0])});};
+const runSelectedWeek=()=>{if(!selected)return; const prevMemories=state.memories.length; const result=runWeek(state,selected); if(result.state===state)return setMessage('행동 횟수를 모두 사용했습니다. 이번 주를 마무리해 주세요.'); setState(result.state); saveGame(result.state); const latest=result.state.memories.slice(prevMemories); const rare=latest.find((m)=>m.importance>=3) ?? latest[0]; const inferredKey=eventKeyFromMemory(rare); if (latest.length > 0 && !inferredKey) { console.warn('[event-illustration] key missing', { title: rare?.title, tags: rare?.tags }); } setEventImageFailed(false); setActivityModal({sceneText:result.resultSceneText??'동하는 오늘도 자기만의 시간을 보냈다.',resultLines:result.resultLines,scheduleName:result.scheduleName,newMemories:latest,eventIllustrationKey:inferredKey});};
 const finishWeek=()=>{const prev=state.memories.length; const reflection=state.weeklyReflections[0]??'동하는 이번 주를 조용히 지나오며 자기만의 리듬을 만들었습니다.'; const next=advanceWeek(state); setState(next); saveGame(next); setWeeklyModal({reflection,newMemory:next.memories[prev]});};
 if(scene==='title') return <main className="title-page"><section className="title-card"><p className="eyebrow">RAISING DIARY</p><h1>동하키우기</h1><p className="subtitle">시간의 압박 속에서 쌓이는 작은 기억들</p><div className="menu-list"><button onClick={startNewGame}>새 게임</button><button onClick={continueGame}>이어하기</button></div>{message?<p className="title-message">{message}</p>:null}</section></main>;
 if(scene==='intro') return <main className="intro-page"><section className="intro-card">{introLines.map((line)=><p key={line} className='intro-line visible'>{line}</p>)}<div className='intro-actions'><button onClick={()=>setScene('main')}>시작하기</button></div></section></main>;
@@ -51,6 +80,7 @@ return <main className='main-page'><section className={`top-card status-hero ${s
 <section className='schedule-card'><h3>이번 주 행동 선택</h3><div className='schedule-list'>{(Object.keys(schedules) as ScheduleId[]).map((id)=><button key={id} disabled={state.actionsLeft===0} className={selected===id?'schedule-item selected':'schedule-item'} onClick={()=>setSelected(id)}><strong>{schedules[id].name}</strong><em>피로 {schedules[id].fatigue>=0?'+':''}{schedules[id].fatigue} / 스트레스 {schedules[id].stress>=0?'+':''}{schedules[id].stress}</em></button>)}</div><div className='action-buttons'><button className='run-button' onClick={runSelectedWeek} disabled={state.actionsLeft===0||!selected}>행동 실행</button><button className='run-button finish' onClick={finishWeek}>이번 주를 마무리하기</button><button className='run-button preview-button' onClick={()=>setShowPreview((v)=>!v)}>성장 방향 미리보기</button></div></section>
 {showPreview?<section className='summary-card growth-preview'><h3>현재 성장 방향</h3><ol>{endingPreview.map((e,i)=><li key={e.id}>{i+1}. {endingLabelMap[e.id]??'아직 이름 붙이기 어려운 방향'}</li>)}</ol></section>:null}
 <section className='log-card memory-notes'><h3>동하의 기억</h3>{memoryPreview.length===0?<p>아직 특별한 기억은 없습니다.</p>:memoryPreview.map((m)=><article key={`${m.id}-${m.week}`}><div className={`memory-thumb ${getMemoryVisualClass(m)}`} /><div><p>[{m.age}살 · {m.season}]</p><strong>{m.title}</strong><p>{m.text}</p></div></article>)}</section>
-{activityModal?<section className='modal-backdrop'><article className={`modal-card ${activityModal.newMemories.length>0?'event':''}`}><p className='modal-eyebrow'>{activityModal.newMemories.length>0?'작은 사건':'오늘의 장면'}</p><h4>{activityModal.scheduleName}</h4>{activityModal.newMemories.length>0?<div className='event-illustration'>{activityModal.eventIllustrationKey&&!eventImageFailed?<img src={`/assets/dongha/events/${activityModal.eventIllustrationKey}.png`} alt='' onError={()=>setEventImageFailed(true)}/>:<div className='event-fallback'><small>이벤트 삽화</small></div>}</div>:null}<p className='scene-text'>{activityModal.sceneText}</p>{activityModal.newMemories[0]?<p className='new-memory'>새로운 기억이 생겼습니다. “{activityModal.newMemories[0].title}”</p>:null}<button className='run-button' onClick={()=>setActivityModal(null)}>확인</button></article></section>:null}
+{activityModal?<section className='modal-backdrop'><article className={`modal-card ${activityModal.newMemories.length>0?'event':''}`}><p className='modal-eyebrow'>{activityModal.newMemories.length>0?'작은 사건':'오늘의 장면'}</p><h4>{activityModal.scheduleName}</h4>{activityModal.newMemories.length>0?<div className='event-illustration'>{activityModal.eventIllustrationKey&&!eventImageFailed?<img src={`/assets/dongha/events/${activityModal.eventIllustrationKey}.png`} alt='' onError={(e)=>{const failedPath=(e.currentTarget as HTMLImageElement).src; console.warn('[event-illustration] failed to load', failedPath); setEventImageFailed(true);}}/>:<div className='event-fallback'><small>이벤트 삽화</small></div>}</div>:null}<p className='scene-text'>{activityModal.sceneText}</p>{activityModal.newMemories[0]?<p className='new-memory'>새로운 기억이 생겼습니다. “{activityModal.newMemories[0].title}”</p>:null}<button className='run-button' onClick={()=>setActivityModal(null)}>확인</button></article></section>:null}
+{import.meta.env.DEV?<aside className='dev-image-panel'><strong>이미지 체크</strong><ul>{devImageTargets.map((src)=><li key={src}><span>{src.split('/').pop()}</span><em>{devImageStatus[src]??'...'}</em></li>)}</ul></aside>:null}
 </main>;
 }
