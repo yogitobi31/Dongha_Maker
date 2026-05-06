@@ -5,7 +5,7 @@ import type { GameState, ScheduleId, StatName } from './game/types';
 import { emotionLabelMap, emotionNarrativeMap, getDonghaPortraitPath, getMemoryVisualClass, seasonVisualMeta, type EventIllustrationKey } from './game/visuals';
 import { GROWTH_DIRECTIONS } from './data/growthDirections';
 import { MILESTONES } from './data/milestones';
-import { pickWeeklyCards, maybeEvent, detectCombos } from './utils/growthEngine';
+import { pickWeeklyCards, maybeEvent, detectCombos, getMainCta } from './utils/growthEngine';
 
 type Scene = 'title' | 'intro' | 'main';
 type ActivityModal = { sceneText: string; resultLines: string[]; newMemories: GameState['memories']; scheduleName: string; eventIllustrationKey?: EventIllustrationKey;};
@@ -79,12 +79,8 @@ const weeksToMilestone = Math.max(0, (nextMilestone.month-currentMonth)*4 + (4-c
 const starterDirectionIds = ['sensitive','curious','fit'];
 const unlockedDirections = currentMonth <= 1 ? GROWTH_DIRECTIONS.filter((d)=>starterDirectionIds.includes(d.id)) : GROWTH_DIRECTIONS;
 const lockedDirectionCount = GROWTH_DIRECTIONS.length - unlockedDirections.length;
-const openMilestoneModal = state.milestoneHistory.length>0 && !reportText;
-const showMonthlyReportCta = currentWeekInMonth===4 && state.actionsLeft===0;
-const showEventCta = Boolean(pendingEvent);
-const showWeeklyChoiceCta = Boolean(state.selectedGrowthDirection) && state.actionsLeft===state.actionsPerWeek;
-const showDirectionCta = !state.selectedGrowthDirection;
-const primaryCtaLabel = openMilestoneModal ? '특별한 성장 순간 보기' : showMonthlyReportCta ? '이번 달 성장 돌아보기' : showEventCta ? '뜻밖의 사건 확인하기' : showDirectionCta ? '이번 달 어떻게 키울지 정하기' : showWeeklyChoiceCta ? '이번 주 함께할 일 고르기' : '다음 주로 진행하기';
+const currentCta = getMainCta(state);
+const primaryCtaLabel = currentCta.label;
 const tutorialMessage = !hideTutorial && currentMonth===1 ? tutorialByWeek[currentWeekInMonth] : '';
 const recommendedCardId = (()=>{
   if (state.stress>=70) return weeklyCards.find((c:any)=>c.tags.includes('rest')||c.stressEffect<0)?.id;
@@ -98,6 +94,37 @@ const recommendedCardId = (()=>{
 })();
 
 
+
+const handleOpenMilestone=()=>{
+  const nextMilestone=state.pendingMilestones?.[0] ?? state.milestoneHistory?.find((m)=>!(state.seenMilestoneIds??[]).includes(m));
+  if(!nextMilestone){ setMessage('아직 열리지 않은 특별한 성장 순간은 없어요.'); return; }
+  setReportText(`특별한 성장 순간: ${nextMilestone}`);
+  const next={...state,pendingMilestones:(state.pendingMilestones??[]).filter((m)=>m!==nextMilestone),seenMilestoneIds:[...(state.seenMilestoneIds??[]),nextMilestone]};
+  setState(next); saveGame(next);
+};
+const handleFastForwardMonth=()=>{
+  let sim=structuredClone(state);
+  const milestones:string[]=[];
+  for(let i=0;i<4;i++){
+    const auto=pickWeeklyCards(sim.selectedGrowthDirection??undefined)[0];
+    const a=applyGrowthCard(auto,sim);
+    sim.pendingEvent=null;
+    sim=advanceWeek(runWeek(a.next,selected??'walk').state);
+    const newMilestones=sim.milestoneHistory.filter((m)=>!(state.milestoneHistory??[]).includes(m));
+    milestones.push(...newMilestones);
+  }
+  const report={week:sim.currentWeek,title:'자동 진행 월간 리포트',summary:'지난 4주를 안정적으로 자동 진행했습니다.',topStats:[],stressDelta:sim.stress-state.stress,discoveredComboIds:sim.discoveredCombos.slice(0,3),eventTitles:sim.eventHistory.slice(0,4),milestoneTitles:milestones,recommendation:'다음 달도 같은 리듬으로 진행해보세요.'};
+  sim.monthlyReports=[...(sim.monthlyReports??[]),report];
+  sim.pendingMonthlyReport=report;
+  sim.pendingMilestones=[...(sim.pendingMilestones??[]),...milestones.filter((m)=>!(sim.pendingMilestones??[]).includes(m))];
+  setState(sim); saveGame(sim); setReportText(report.summary);
+};
+const handlePrimaryCta=()=>{
+  if(currentCta.id==='milestone') return handleOpenMilestone();
+  if(currentCta.id==='monthly-report'){ if(state.pendingMonthlyReport) setReportText(state.pendingMonthlyReport.summary); return; }
+  if(currentCta.id==='event'){ if(pendingEvent) setMessage('뜻밖의 순간을 확인해 주세요.'); return; }
+  if(currentCta.id==='next-week') return finishWeek();
+};
 useEffect(() => {
   if (!import.meta.env.DEV) return;
   devImageTargets.forEach((src) => {
@@ -144,9 +171,9 @@ return <main className='main-page'><section className={`top-card status-hero ${s
 {!seasonImageFailed?<img className='season-bg-image' src={seasonMeta.imagePath} alt='' onError={()=>setSeasonImageFailed(true)}/>:null}
 <p className='date'>{getDateLabel(state)}</p><div className='hero-title-row'><h2>동하의 하루</h2><span className='emotion-badge'>{emotionLabelMap[state.emotionState]}</span></div>
 <div className='hero-portrait-wrap'><article className='portrait-frame'>{!portraitFailed?<img src={portraitPath} alt={`동하 ${emotionLabelMap[state.emotionState]}`} onError={()=>setPortraitFailed(true)}/>:<div className='portrait-fallback'><small>동하</small><strong>{emotionLabelMap[state.emotionState]}</strong></div>}</article><div><p className='hero-line'>{statusLine}</p><p className='season-mood'>{seasonMeta.line}</p></div></div></section>
-<section className='summary-card objective-card'><p className='eyebrow'>현재 목표</p><h3>생후 {currentMonth}개월 — {nextMilestone.title}를 향해</h3><p>동하가 세상에 조금씩 적응하고 있어요. 앞으로 {weeksToMilestone}주 동안 안정감과 애착을 키워주면 {nextMilestone.title} 이벤트를 만날 수 있습니다.</p><p>현재 나이: 생후 {currentMonth}개월 · 현재 주차: {currentWeekInMonth}주차 · 다음 특별한 성장 순간: {nextMilestone.title} · 남은 시간: {weeksToMilestone}주 · 추천 성장 요소: 안정감 / 애착 / 감성</p></section><section className='summary-card tutorial-card'>{tutorialMessage ? <><p>{tutorialMessage}</p><button className='run-button' onClick={()=>{localStorage.setItem('dongha.hideTutorial','true'); setHideTutorial(true);}}>다시 보지 않기</button></> : <p>지금 해야 할 일이 아래에 준비되어 있어요.</p>}</section><section className='schedule-card'><h3>지금 해야 할 일</h3><button className='run-button primary-cta'>{primaryCtaLabel}</button></section><section className='summary-card'>이번 주 남은 행동 <strong>{state.actionsLeft} / {state.actionsPerWeek}</strong> · 피로 <strong>{state.fatigue}</strong> · 스트레스 <strong>{state.stress}</strong></section>
+<section className='summary-card objective-card'><p className='eyebrow'>현재 목표</p><h3>생후 {currentMonth}개월 — {nextMilestone.title}를 향해</h3><p>동하가 세상에 조금씩 적응하고 있어요. 앞으로 {weeksToMilestone}주 동안 안정감과 애착을 키워주면 {nextMilestone.title} 이벤트를 만날 수 있습니다.</p><p>현재 나이: 생후 {currentMonth}개월 · 현재 주차: {currentWeekInMonth}주차 · 다음 특별한 성장 순간: {nextMilestone.title} · 남은 시간: {weeksToMilestone}주 · 추천 성장 요소: 안정감 / 애착 / 감성</p></section><section className='summary-card tutorial-card'>{tutorialMessage ? <><p>{tutorialMessage}</p><button className='run-button' onClick={()=>{localStorage.setItem('dongha.hideTutorial','true'); setHideTutorial(true);}}>다시 보지 않기</button></> : <p>지금 해야 할 일이 아래에 준비되어 있어요.</p>}</section><section className='schedule-card'><h3>지금 해야 할 일</h3><button aria-label={primaryCtaLabel} className='run-button primary-cta' onClick={handlePrimaryCta}>{primaryCtaLabel}</button></section><section className='summary-card'>이번 주 남은 행동 <strong>{state.actionsLeft} / {state.actionsPerWeek}</strong> · 피로 <strong>{state.fatigue}</strong> · 스트레스 <strong>{state.stress}</strong></section>
 <section className='summary-card'><h3>이번 달 돌봄 방향을 정해볼까요?</h3><div className='schedule-list'>{unlockedDirections.map((d)=><button key={d.id} className={state.selectedGrowthDirection===d.id?'schedule-item selected':'schedule-item'} onClick={()=>{const next={...state,selectedGrowthDirection:d.id};setState(next);saveGame(next);setWeeklyCards(pickWeeklyCards(d.id));}}><strong>{d.title}</strong><em>{d.description}</em></button>)}</div>{lockedDirectionCount>0?<p>동하가 조금 더 자라면 새로운 돌봄 방향이 열립니다.</p>:null}<p>선택 방향: {GROWTH_DIRECTIONS.find((d)=>d.id===state.selectedGrowthDirection)?.title ?? '미선택'}</p></section><section className='summary-card'><h3>이번 주 함께할 일</h3><div className='schedule-list'>{weeklyCards.map((c)=> <article key={c.id} className='schedule-item'><strong>{c.title} {c.id===recommendedCardId?<span>추천</span>:null}</strong><p>{c.description}</p><p>{c.id===recommendedCardId?(state.stress>=70?'지금은 스트레스를 낮추기 좋아요.':'이번 달 성장 방향과 잘 맞아요.'):' '}</p></article>)}</div></section><section className='stats-grid'>{statOrder.map((key)=><article key={key} className='stat-card'><div className='stat-head'><span>{key}</span><strong>{state.stats[key]}</strong></div><div className='bar'><i style={{width:`${state.stats[key]}%`}}/></div></article>)}</section>
-<section className='schedule-card'><h3>이번 주 함께할 일 실행</h3><div className='schedule-list'>{(Object.keys(schedules) as ScheduleId[]).map((id)=><button key={id} disabled={state.actionsLeft===0} className={selected===id?'schedule-item selected':'schedule-item'} onClick={()=>setSelected(id)}><strong>{schedules[id].name}</strong><em>피로 {schedules[id].fatigue>=0?'+':''}{schedules[id].fatigue} / 스트레스 {schedules[id].stress>=0?'+':''}{schedules[id].stress}</em></button>)}</div><div className='action-buttons'><button className='run-button' onClick={runSelectedWeek} disabled={state.actionsLeft===0||!selected}>행동 실행</button><button className='run-button finish' onClick={finishWeek}>1주 진행</button>{state.ageInMonths>1 || state.monthlyReports.length>0 ? <button className='run-button' onClick={()=>{let sim=state;for(let i=0;i<4;i++){const auto=pickWeeklyCards(sim.selectedGrowthDirection??undefined)[0];const a=applyGrowthCard(auto,sim);sim=advanceWeek(runWeek(a.next,selected??'walk').state);} setState(sim); saveGame(sim); setReportText('지난 4주 동안 동하는 반복보다 리듬을 선택하며 차분히 성장했습니다.');}}>한 달 맡겨보기</button> : <small>이제 기본 흐름을 익혔어요. 다음부터는 한 달을 빠르게 진행할 수도 있습니다.</small>}<button className='run-button' onClick={()=>{let sim=state;while(sim.milestoneHistory.length===state.milestoneHistory.length){const auto=pickWeeklyCards(sim.selectedGrowthDirection??undefined)[0];const a=applyGrowthCard(auto,sim);sim=advanceWeek(runWeek(a.next,selected??'walk').state); if(sim.currentWeek-state.currentWeek>16) break;} setState(sim);saveGame(sim);}}>특별한 성장 순간까지</button><button className='run-button preview-button' onClick={()=>setShowPreview((v)=>!v)}>성장 방향 미리보기</button></div></section>
+<section className='schedule-card'><h3>이번 주 함께할 일 실행</h3><div className='schedule-list'>{(Object.keys(schedules) as ScheduleId[]).map((id)=><button key={id} disabled={state.actionsLeft===0} className={selected===id?'schedule-item selected':'schedule-item'} onClick={()=>setSelected(id)}><strong>{schedules[id].name}</strong><em>피로 {schedules[id].fatigue>=0?'+':''}{schedules[id].fatigue} / 스트레스 {schedules[id].stress>=0?'+':''}{schedules[id].stress}</em></button>)}</div><div className='action-buttons'><button className='run-button' onClick={runSelectedWeek} disabled={state.actionsLeft===0||!selected}>행동 실행</button><button className='run-button finish' onClick={finishWeek}>1주 진행</button>{state.ageInMonths>1 || state.monthlyReports.length>0 ? <button aria-label='한달맡겨보기' className='run-button' onClick={handleFastForwardMonth}>한 달 맡겨보기</button> : <small>이제 기본 흐름을 익혔어요. 다음부터는 한 달을 빠르게 진행할 수도 있습니다.</small>}<button aria-label='특별한성장순간' className='run-button' onClick={handleOpenMilestone} disabled={(state.pendingMilestones?.length ?? 0)===0}>특별한성장순간</button><button className='run-button preview-button' onClick={()=>setShowPreview((v)=>!v)}>성장 방향 미리보기</button></div></section>
 {showPreview?<section className='summary-card growth-preview'><h3>현재 성장 방향</h3><ol>{endingPreview.map((e,i)=><li key={e.id}>{i+1}. {endingLabelMap[e.id]??'아직 이름 붙이기 어려운 방향'}</li>)}</ol></section>:null}
 <section className='log-card memory-notes'><h3>동하의 기억</h3>{memoryPreview.length===0?<p>아직 특별한 기억은 없습니다.</p>:memoryPreview.map((m)=>{const memoryEventKey = eventKeyFromMemory(m); const memoryImagePath = memoryEventKey ? `/assets/dongha/events/${memoryEventKey}.png` : undefined; const hasFailedMemoryImage = failedMemoryImages[m.id]; const showMemoryImage = Boolean(memoryImagePath && !hasFailedMemoryImage); return <article key={`${m.id}-${m.week}`}>{showMemoryImage?<div className='memory-thumb memory-thumb-image-wrap'><img src={memoryImagePath} alt={`${m.title} 삽화`} onError={()=>{setFailedMemoryImages((prev)=>({ ...prev, [m.id]: true })); console.warn('[DonghaMaker] Memory thumbnail failed:', memoryImagePath);}} /></div>:<div className={`memory-thumb ${getMemoryVisualClass(m)}`} />}<div><p>[{m.age}살 · {m.season}]</p><strong>{m.title}</strong><p>{m.text}</p></div></article>;})}</section>
 {activityModal?<section className='modal-backdrop'><article className={`modal-card ${activityModal.newMemories.length>0?'event':''}`}><p className='modal-eyebrow'>{activityModal.newMemories.length>0?'작은 사건':'오늘의 장면'}</p><h4>{activityModal.scheduleName}</h4>{activityModal.newMemories.length>0?<div className='event-illustration'>{activityModal.eventIllustrationKey&&!eventImageFailed?<img src={`/assets/dongha/events/${activityModal.eventIllustrationKey}.png`} alt='' onError={(e)=>{const failedPath=(e.currentTarget as HTMLImageElement).src; console.warn('[event-illustration] failed to load', failedPath); setEventImageFailed(true);}}/>:<div className='event-fallback'><small>이벤트 삽화</small></div>}</div>:null}<p className='scene-text'>{activityModal.sceneText}</p>{activityModal.newMemories[0]?<p className='new-memory'>새로운 기억이 생겼습니다. “{activityModal.newMemories[0].title}”</p>:null}<button className='run-button' onClick={()=>setActivityModal(null)}>확인</button></article></section>:null}

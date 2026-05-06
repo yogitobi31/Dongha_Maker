@@ -24,5 +24,5 @@ export type GameState = {
   flags: Flags; logs: GameLog[]; memories: MemoryFragment[]; growthProfile: GrowthProfile;
   relationships: Record<string, Relationship>; relationshipEventFlags: Record<string, boolean>; seasonEventHistory: string[];
   weeklyActivityHistory: ScheduleId[]; recentConsecutiveActiveWeeks:number; weeklyReflections:string[]; emotionState:EmotionState; updatedAt:string;
-  currentWeek:number; currentMonth:number; ageInMonths:number; selectedGrowthDirection:string|null; recentActionTags:string[]; recentActions:string[]; discoveredCombos:string[]; growthHistory:string[]; milestoneHistory:string[]; monthlyReports: MonthlyReport[]; eventHistory:string[]; lastMonthlyReportWeek:number;
+  currentWeek:number; currentMonth:number; ageInMonths:number; selectedGrowthDirection:string|null; recentActionTags:string[]; recentActions:string[]; discoveredCombos:string[]; growthHistory:string[]; milestoneHistory:string[]; pendingMilestones:string[]; seenMilestoneIds:string[]; monthlyReports: MonthlyReport[]; pendingMonthlyReport: MonthlyReport | null; eventHistory:string[]; pendingEvent: string | null; saveVersion:number; lastMonthlyReportWeek:number;
 };
