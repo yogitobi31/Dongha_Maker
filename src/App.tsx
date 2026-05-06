@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createAndSaveInitialGame, hasSaveData, loadGame, saveGame } from './game/storage';
-import { advanceWeek, createInitialState, getDateLabel, runWeek, schedules } from './game/engine';
+import { advanceWeek, createInitialState, getDateLabel, getDominantTraits, getEndingCandidates, runWeek, schedules } from './game/engine';
 import type { GameState, ScheduleId, StatName } from './game/types';
 
 type Scene = 'title' | 'intro' | 'main';
@@ -23,8 +23,13 @@ export default function App() {
   const [message, setMessage] = useState('');
   const [statusLine, setStatusLine] = useState('동하는 아직 말을 잘하지 못하지만, 눈빛은 반짝입니다.');
   const [visibleLines, setVisibleLines] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
+  const isDev = Boolean((import.meta as any).env?.DEV);
 
   const sortedLogs = useMemo(() => state.logs.slice(0, 5), [state.logs]);
+  const memoryPreview = useMemo(() => state.memories.slice(-3).reverse(), [state.memories]);
+  const endingPreview = useMemo(() => getEndingCandidates(state), [state]);
+  const dominantTraits = useMemo(() => getDominantTraits(state), [state]);
 
   useEffect(() => {
     if (scene !== 'intro') return;
@@ -69,7 +74,7 @@ export default function App() {
     const next = advanceWeek(state);
     setState(next);
     saveGame(next);
-    setMessage('새로운 주가 시작되었습니다.');
+    setMessage(`새로운 주가 시작되었습니다. ${next.weeklyReflections[0] ?? ''}`);
   };
 
   if (scene === 'title') {
@@ -113,6 +118,7 @@ export default function App() {
 
       <section className="summary-card">{statusLine}</section>
 
+      
       <section className="schedule-card">
         <h3>이번 주 행동 선택</h3>
         <div className="schedule-list">
@@ -125,9 +131,14 @@ export default function App() {
         </div>
         <button className="run-button" onClick={runSelectedWeek} disabled={state.actionsLeft === 0}>행동 실행</button>
         <button className={state.actionsLeft === 0 ? 'run-button finish emphasize' : 'run-button finish'} onClick={finishWeek}>이번 주를 마무리하기</button>
+        <button className="run-button" onClick={() => setShowPreview((v) => !v)}>성장 방향 미리보기</button>
       </section>
 
-      <section className="log-card">
+      {showPreview ? <section className="summary-card"><h3>현재 성장 방향</h3><p>현재 동하는 이런 방향으로 자라고 있습니다.</p><ol>{endingPreview.map((e, i) => <li key={e.id}>{i+1}. {e.id}</li>)}</ol><p>동하는 자기만의 세계를 만드는 쪽으로 조금씩 기울고 있습니다.</p></section> : null}
+
+      <section className="log-card"><h3>동하의 기억</h3>{memoryPreview.length===0 ? <p>아직 특별한 기억이 쌓이지 않았습니다.</p> : memoryPreview.map((m)=><article key={m.id}><p>[{m.age}살 · {m.season}]</p><strong>{m.title}</strong><p>{m.text}</p></article>)}</section>
+      {isDev ? <section className="log-card"><h3>개발자 디버그 패널</h3><p>Hidden Traits: {dominantTraits.map(([k,v])=>`${k}:${v.toFixed(1)}`).join(', ')}</p><p>Ending Seeds: {endingPreview.map((x)=>`${x.id}:${x.score}`).join(', ')}</p></section> : null}
+<section className="log-card">
         <h3>최근 일지</h3>
         {sortedLogs.length === 0 ? <p>아직 기록이 없습니다.</p> : sortedLogs.map((log, i) => <p key={`${log.weekLabel}-${i}`}>[{log.weekLabel}] {log.scheduleName} · {log.lines.join(' / ')}</p>)}
       </section>
