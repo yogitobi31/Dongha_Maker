@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createAndSaveInitialGame, hasSaveData, loadGame, saveGame } from './game/storage';
-import { advanceWeek, createInitialState, getDateLabel, getEndingCandidates, runWeek, schedules } from './game/engine';
+import { advanceWeek, createInitialState, getDateLabel, getEndingCandidates, runWeek, schedules, seasonMoodLine } from './game/engine';
 import type { GameState, ScheduleId, StatName } from './game/types';
 
 type Scene = 'title' | 'intro' | 'main';
@@ -95,6 +95,8 @@ export default function App() {
     return statusNarratives[idx];
   }, [state.player.week, state.player.season, state.actionsLeft]);
 
+  const relationshipList = useMemo(() => Object.values(state.relationships), [state.relationships]);
+
   useEffect(() => {
     if (scene !== 'intro' || visibleLines >= introLines.length) return;
     const t = window.setTimeout(() => setVisibleLines((prev) => prev + 1), 1100);
@@ -172,7 +174,7 @@ export default function App() {
       <section className="top-card status-hero">
         <p className="date">{getDateLabel(state)}</p>
         <div className="hero-title-row"><h2>동하의 하루</h2><span className="emotion-badge">{emotionLabelMap[state.emotionState]}</span></div>
-        <p className="hero-line">{statusLine}</p>
+        <p className="hero-line">{statusLine}</p><p className="season-mood">{seasonMoodLine[(state.memories.length ? state.memories[state.memories.length-1].season : ['봄','여름','가을','겨울'][state.player.season]) as '봄'|'여름'|'가을'|'겨울']}</p>
       </section>
 
       <section className="summary-card">이번 주 남은 행동 <strong>{state.actionsLeft} / {state.actionsPerWeek}</strong> · 피로 <strong>{state.fatigue}</strong> · 스트레스 <strong>{state.stress}</strong></section>
@@ -202,6 +204,9 @@ export default function App() {
       </section>
 
       {showPreview ? <section className="summary-card growth-preview"><h3>현재 성장 방향</h3><p>동하는 아직 아무것도 정해지지 않았습니다. 하지만 지금까지의 시간은 이런 흔적을 남기고 있습니다.</p><ol>{endingPreview.map((e, i) => <li key={e.id}>{i + 1}. {endingLabelMap[e.id] ?? '아직 이름 붙이기 어려운 방향'}</li>)}</ol><p>동하는 <strong>{endingLabelMap[endingPreview[0]?.id ?? 'lateBloomingOrdinaryLife']}</strong> 쪽으로 조금씩 기울고 있습니다.</p></section> : null}
+
+
+      <section className="log-card relationship-notes"><h3>동하의 관계</h3>{relationshipList.every((r)=>Object.values(r.metrics).every((v)=>!v)) ? <p>동하의 세상은 아직 작지만, 곧 조금씩 넓어질 것입니다.</p> : <div className="relationship-grid">{relationshipList.map((r)=><article key={r.name}><strong>{r.name}</strong><p>{r.note}</p><em>{Object.entries(r.metrics).filter(([,v])=>typeof v==='number'&&v>0).map(([k,v])=>`${k==='intimacy'?'친밀도':k==='trust'?'신뢰':k==='curiosity'?'흥미':'편안함'} ${v}`).join(' · ') || '아직 조용한 관계'}</em>{r.memories[0]?<span>최근 기억: {r.memories[0]}</span>:null}</article>)}</div>}</section>
 
       <section className="log-card memory-notes"><h3>동하의 기억</h3>{memoryPreview.length === 0 ? <p>아직 특별한 기억은 없습니다. 하지만 시간은 천천히 쌓이고 있습니다.</p> : memoryPreview.map((m) => <article key={`${m.id}-${m.week}`}><p>[{m.age}살 · {m.season}]</p><strong>{m.title}</strong><p>{m.text}</p></article>)}</section>
 

@@ -67,3 +67,10 @@ h1 { margin: 10px 0 6px; font-size: clamp(36px, 8vw, 56px); }
 .intro-line.visible { opacity: 1; transform: translateY(0); }
 .intro-actions { display:flex; gap:10px; justify-content:flex-end; margin-top: 20px; }
 .intro-actions button { border:1px solid var(--line); background:#fff; border-radius:10px; padding:10px 12px; }
+.season-mood{margin:8px 0 0;color:#6a5b4b;font-size:14px}
+.relationship-grid{display:grid;gap:14px;margin-top:10px}
+.relationship-notes article{background:#fffaf3;border:1px solid #eadfce;border-radius:16px;padding:14px;display:grid;gap:6px}
+.relationship-notes strong{font-size:18px}
+.relationship-notes em{font-style:normal;color:#4f4438}
+.relationship-notes span{color:#7a6a5b;font-size:13px}
+@media (min-width: 768px){.relationship-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}}
