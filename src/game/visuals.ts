@@ -27,7 +27,18 @@ export const seasonVisualMeta: Record<SeasonLabel, { line: string; className: st
   겨울: { line: '차가운 바깥과 달리 방 안은 포근합니다.', className: 'season-winter', imagePath: '/assets/dongha/seasons/winter-bg.png' }
 };
 
-export const eventIllustrationKeys = ['rainy_window', 'tiny_ant', 'strange_dog', 'creative_block_tower', 'first_why', 'long_nap', 'heeseon_seed'] as const;
+export const eventIllustrationKeys = [
+  'rainy_window',
+  'tiny_ant',
+  'strange_dog',
+  'creative_block_tower',
+  'first_why',
+  'long_nap',
+  'heeseon_seed',
+  'parents_comfort',
+  'walking_grandma',
+  'neighborhood_child'
+] as const;
 export type EventIllustrationKey = (typeof eventIllustrationKeys)[number];
 
 export const getAgePortraitBucket = (age: number) => {
